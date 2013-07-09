@@ -80,16 +80,6 @@
 			    (let ( 
 			      (next-sequence (cons (car xs) (skip 1 (cdr xs))))
 			      )
-;			      (display "### NEXT ###")
-;			      (newline)
-;			      (display "full list: ")
-;			      (display xs)
-;			      (newline)
-;			      (display "next sequence: ")
-;			      (display next-sequence)
-;			      (newline)
-;			      (display "rest: ")
-;			      (display rest)
 			      (cons (take n xs) (get-permutations n next-sequence))
 				  ))))
   )
@@ -119,17 +109,43 @@
 					  (newline)
 					  (if (= n 0) '()
 					     (cons (build-tuples (append (skip n ys) (take n ys))) (subsets (- n 1) ys))
-					     )
-					  )
-					)
-			       )
-			       (subsets (length xs) xs)
-			)
-		      )
-  )
+					     ))))
+			       (subsets (length xs) xs))))
 
 (get-subsets test-list)
-					     
-  
+		
 
-		     
+
+;####################################################################
+; Example from Stanford:
+;####################################################################
+
+(define test-list '(1 2 3 4 5 6 7))
+			     
+ ;First Example:
+(define powerset (lambda (set)
+  (if (null? set) '(())
+      (append (powerset (cdr set))
+	      (map (lambda (subset)
+		     (cons (car set) subset))
+		   (powerset (cdr set)))))))
+
+(powerset '(1 2 3))
+
+;Example w/ the Use of Let:		     
+(define let-powerset (lambda (set)
+		       (display "set in root lambda: ")
+		       (display set)
+		       (newline)
+		       (if (null? set) '(())
+			   (let ((ps-rest (let-powerset (cdr set))))
+			     (append ps-rest (map (lambda (subset)
+						    (cons (car set) subset))
+						  ps-rest))
+			     ))))
+
+(let-powerset '(1 2 3))
+
+
+
+
