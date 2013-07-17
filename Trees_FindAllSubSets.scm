@@ -62,6 +62,12 @@
 
 (define add (lambda (x y) (+ x y)))
 
+(define assert-true (lambda (f x) (if (f x) #t (error "assert-true failed")))) 
+
+(define assert-false (lambda (f x) (if (not (f x)) #t (error "assert-false failed")))) 
+
+
+
 
 
 ;####################################################################
@@ -179,15 +185,27 @@
 (define leaf? null?)
 (define (tree value left right) (list left right value))
 
-(define test-tree
-  (tree 5
-	(tree 3
+(define valid-bst
+  (tree 4
+	(tree 2
+	      (tree 1 leaf leaf)
+	      (tree 3 leaf leaf)
+	      )
+	(tree 6
+	      (tree 5 leaf leaf)
+	      (tree 7 leaf leaf)
+	      )))
+
+
+(define invalid-bst
+  (tree 4
+	(tree 2
+	      (tree 1 leaf leaf)
+	      (tree 3 leaf leaf)
+	      )
+	(tree 6
 	      (tree 1 leaf leaf)
 	      (tree 7 leaf leaf)
-	      )
-	(tree 8
-	      (tree 6 leaf leaf)
-	      (tree 10 leaf leaf)
 	      )))
 
 
@@ -198,40 +216,21 @@
 
 (define valid-bst? (lambda (root f xs)
 		     (if (null? xs) #t
-			 (letrec (
-				  (node-value (car (skip 2 xs)))
-				  (left-child (car (take 1 xs)))
-				  (right-child (car (skip 1 xs)))
-				  )
-			   (if (and (f root node-value) (valid-bst? root f left-child) (valid-bst? root f right-child))
-			   #t
-			   #f)
-			 ))))
+			   (and (f root (node-value xs)) (valid-bst? root f (left-child xs)) (valid-bst? root f (right-child xs))))
+			 ))
 
 
-;(valid-bst? 10 > tree1)
+(valid-bst? 10 > tree1)
 
 
 (define is-bst-valid? (lambda (xs)
-  (if (null? xs) #t
-      (letrec (
-	       (node-value (car (skip 2 xs)))
-	       (left-child (car (take 1 xs)))
-	       (right-child (car (skip 1 xs)))
-	       )
-	(if (and (valid-bst? node-value > left-child) (valid-bst? node-value < right-child))
-	    (if (and (is-bst-valid? left-child) (is-bst-valid? right-child))
-		#t
-		#f)
-	    #f)
-	)
-      )
-  )
-  )
+			(if (null? xs) #t
+			    (if (and (valid-bst? (node-value xs) > (left-child xs)) (valid-bst? (node-value xs) < (right-child xs)))
+				(and (is-bst-valid? (left-child xs)) (is-bst-valid? (right-child xs))) 
+				#f
+				))))
   
 
-(is-bst-valid? test-tree)
- 
-			     
+(assert-true is-bst-valid? valid-bst)
 
-		     
+(assert-false is-bst-valid? invalid-bst)
