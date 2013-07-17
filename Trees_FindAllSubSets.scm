@@ -147,5 +147,91 @@
 (let-powerset '(1 2 3))
 
 
+;####################################################################
+; Does the node with a certain value exist?:
+;####################################################################
+
+;Helped via this Stack Overflow Question:
+;http://stackoverflow.com/questions/17600460/scheme-tree-puzzle-expressing-an-empty-node-in-a-final-pair
+
+(define value-exist? (lambda (n xs)
+			(if (null? xs) #f
+			    (if (not (pair? xs))
+				(= n xs)
+				(or (value-exist? n (car xs)) (value-exist? n (cdr xs)))
+				))))
 
 
+(value-exist? 4 '(1 2 3 (3 2 4)))
+
+;####################################################################
+; Verify that a Binary Search Tree is in order:
+;-- The left subtree of a node contains only nodes with keys less than the nod's key.
+;-- The right subtree of a node contains only nodes with keys greater than the nod's key.
+;-- Both the left and right subtrees must also be binary search trees.
+;####################################################################
+
+;Research: 
+;http://www.geeksforgeeks.org/a-program-to-check-if-a-binary-tree-is-bst-or-not/
+
+
+(define leaf '())
+(define leaf? null?)
+(define (tree value left right) (list left right value))
+
+(define test-tree
+  (tree 5
+	(tree 3
+	      (tree 1 leaf leaf)
+	      (tree 7 leaf leaf)
+	      )
+	(tree 8
+	      (tree 6 leaf leaf)
+	      (tree 10 leaf leaf)
+	      )))
+
+
+(define node-value (lambda (node) (car (skip 2 node))))
+(define left-child (lambda (node) (car (take 1 node))))
+(define right-child (lambda (node) (car (skip 1 node))))
+
+
+(define valid-bst? (lambda (root f xs)
+		     (if (null? xs) #t
+			 (letrec (
+				  (node-value (car (skip 2 xs)))
+				  (left-child (car (take 1 xs)))
+				  (right-child (car (skip 1 xs)))
+				  )
+			   (if (and (f root node-value) (valid-bst? root f left-child) (valid-bst? root f right-child))
+			   #t
+			   #f)
+			 ))))
+
+
+;(valid-bst? 10 > tree1)
+
+
+(define is-bst-valid? (lambda (xs)
+  (if (null? xs) #t
+      (letrec (
+	       (node-value (car (skip 2 xs)))
+	       (left-child (car (take 1 xs)))
+	       (right-child (car (skip 1 xs)))
+	       )
+	(if (and (valid-bst? node-value > left-child) (valid-bst? node-value < right-child))
+	    (if (and (is-bst-valid? left-child) (is-bst-valid? right-child))
+		#t
+		#f)
+	    #f)
+	)
+      )
+  )
+  )
+  
+
+(is-bst-valid? test-tree)
+ 
+			     
+
+		     
