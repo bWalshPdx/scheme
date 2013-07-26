@@ -49,6 +49,8 @@
 
 (define (any? f lst) (not (null? (filter f lst))))
 
+(define all? (lambda (f xs) (= (length xs) (length (filter f  xs)))))
+
 
 (define wait (lambda (current-seconds target-seconds)
 	       (if (< current-seconds (* 1000 target-seconds))
@@ -66,8 +68,17 @@
 
 (define assert-false (lambda (f x) (if (not (f x)) #t (error "assert-false failed")))) 
 
+(define count (lambda (f xs)
+		(if (null? xs) 0
+		    (if (f (car xs))
+			(+ 1 (count f (cdr xs)))
+			(+ 0 (count f (cdr xs)))))))
 
 
+(define return (lambda (n xs) 
+		 (if (null? xs) (error "Out of Bounds of List")
+		 (if (= n 0) (car xs)
+		     (return (- n 1) (cdr xs))))))
 
 
 ;####################################################################
@@ -234,3 +245,325 @@
 (assert-true is-bst-valid? valid-bst)
 
 (assert-false is-bst-valid? invalid-bst)
+
+;####################################################################
+;2-3-4 Tree:
+;Providing a List to Perform a Top Down Insertion to Build a 2-3-4 Tree
+;####################################################################
+
+
+;Lets make a data structure:
+
+(define value '())
+
+
+(define leaf '())
+(define leaf? null?)
+(define (234-tree value1 value2 value3 leaf1 leaf2 leaf3 leaf4) (list value1 value2 value3 leaf1 leaf2 leaf3 leaf4))
+
+
+
+
+(define 0-tree
+  (234-tree value 
+	    value
+	    value
+	leaf
+        leaf
+	leaf
+	leaf
+        )
+  )
+
+
+(define 1-tree
+  (234-tree 2 
+	    value
+	    value
+	    (234-tree 1 value value
+		      leaf
+		      leaf
+		      leaf
+		      leaf
+		      )
+            (234-tree 3 44 value
+		      leaf
+		      leaf
+		      leaf
+		      leaf
+		      )	
+	    leaf
+	    leaf
+	    )
+  )
+
+
+(define 2-tree
+  (234-tree 2 
+	    4 
+	    value
+	(234-tree 0 value value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+        (234-tree 3 value value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+	(234-tree 5 6 value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+	leaf
+        )
+  )
+
+
+(define 3-tree
+  (234-tree 2 
+	    4 
+	    6
+	(234-tree 0 value value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+        (234-tree 3 value value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+	(234-tree 5 value value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+	(234-tree 7 8 value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+        )
+  )
+
+;Bad 234 Trees 
+
+
+(define bad-0-tree
+  (234-tree value 
+	    value
+	    value
+	leaf
+        leaf
+	leaf
+	leaf
+        )
+  )
+
+
+(define bad-1-tree
+  (234-tree 2 
+	    value
+	    value
+	    (234-tree 12 value value
+		      leaf
+		      leaf
+		      leaf
+		      leaf
+		      )
+            (234-tree 3 44 value
+		      leaf
+		      leaf
+		      leaf
+		      leaf
+		      )	
+	    leaf
+	    leaf
+	    )
+  )
+
+
+(define bad-2-tree
+  (234-tree 2 
+	    4 
+	    value
+	(234-tree 0 value value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+        (234-tree 3 value value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+	(234-tree 5 68 value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+	leaf
+        )
+  )
+
+
+(define bad-3-tree
+  (234-tree 2 
+	    4 
+	    6
+	(234-tree 0 value value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+        (234-tree 3 value value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+	(234-tree 20 value value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+	(234-tree 7 8 value
+		  leaf
+		  leaf
+		  leaf
+		  leaf
+		  )
+        )
+  )
+
+
+
+
+;Now lets verify the 2-3-4 Tree:
+;What to verify:
+;-<DONE>leaves are (n + 1) the values of the node
+;-<DONE> Has upmost 3 keys
+;-All the lengths are the same
+;-<DONE>The nodes are ordered in the same manner as a bst
+
+(define get-values (lambda (xs) (take 3 xs)))
+(define get-leaves (lambda (xs) (skip 3 xs)))
+
+(define value-count  (lambda (xs)  (count (lambda (x) (not (null? x))) (get-values xs))))
+(define leaf-count  (lambda (xs)  (count (lambda (x) (not (null? x))) (get-leaves xs))))
+
+
+
+
+
+
+(define check-234-tree (lambda (xs)
+			 (if (null? xs) #t
+			     (if (check-234-sub-tree xs)
+				 (and (check-234-sub-tree (return 0 (get-leaves xs))) (check-234-sub-tree (return 1 (get-leaves xs))) (check-234-sub-tree (return 2 (get-leaves xs))) (check-234-sub-tree (return 3 (get-leaves xs))))
+				 #f))))
+
+(check-234-tree bad-0-tree)
+(check-234-tree bad-1-tree)
+(check-234-tree bad-2-tree)
+(check-234-tree bad-3-tree)
+
+
+(define get-tree-lengths (lambda (xs)
+			   (if (null? xs) 0
+			      (letrec (
+				       (first-tree (return 0 (get-leaves xs)))
+				       (second-tree (return 1 (get-leaves xs)))
+				       (third-tree (return 2 (get-leaves xs)))
+				       (fourth-tree (return 3 (get-leaves xs)))
+				       
+				       (first-tree-length (get-tree-lengths (return 0 (get-leaves xs))))
+				       (second-tree-length (get-tree-lengths (return 1 (get-leaves xs))))
+				       (third-tree-length (get-tree-lengths (return 2 (get-leaves xs))))
+				       (fourth-tree-length (get-tree-lengths (return 3 (get-leaves xs))))
+				       )
+				(if (or first-tree-length second-tree-length third-tree-length fourth-tree)
+				    
+				    (if (> 2 (tree-length-delta first-tree-length second-tree-length third-tree-length fourth-tree-length))
+					(1 +  (max first-tree-length second-tree-length third-tree-length fourth-tree-length))
+					#f))))))
+
+(get-tree-lengths 1-tree)
+
+(return 3 (get-leaves 1-tree))
+		        
+				  
+				  
+(define tree-length-delta (lambda (a b c d)
+			    (- (max a b c d) (min a b c d))))
+
+
+;(page 3)
+;http://www.dcs.gla.ac.uk/~pat/52233/slides/234_RB_trees1x1.pdf
+(define check-234-sub-tree (lambda (xs)
+			  (case (value-count xs) 
+			    ((0) #t)
+			    ((1) (and (valid-234? (return 0 (get-values xs)) < (return 0 (get-leaves xs))) 
+				      (valid-234? (return 0 (get-values xs)) > (return 1 (get-leaves xs))) 
+				      )
+			     )
+			    ((2) (and (valid-234? (return 0 (get-values xs)) < (return 0 (get-leaves xs)))
+				      
+				      (valid-234? (return 0 (get-values xs)) > (return 1 (get-leaves xs)))       
+				      (valid-234? (return 1 (get-values xs)) < (return 1 (get-leaves xs)))
+				      
+				      (valid-234? (return 1 (get-values xs)) > (return 2 (get-leaves xs)))
+				      )
+			     )
+			    ((3) (and (valid-234? (return 0 (get-values xs)) < (return 0 (get-leaves xs)))
+				      
+				      (valid-234? (return 0 (get-values xs)) > (return 1 (get-leaves xs)))       
+				      (valid-234? (return 1 (get-values xs)) < (return 1 (get-leaves xs)))
+				      
+				      (valid-234? (return 1 (get-values xs)) > (return 2 (get-leaves xs)))
+				      (valid-234? (return 2 (get-values xs)) < (return 2 (get-leaves xs)))
+				      
+				      (valid-234? (return 2 (get-values xs)) > (return 3 (get-leaves xs)))
+				      )
+			     )
+			    (else (error "Error in check-tree-type"))
+			    )))
+
+;TODO: Make sure these all are true:
+(check-234-sub-tree 0-tree)
+(check-234-sub-tree 1-tree)
+(check-234-sub-tree 2-tree)
+(check-234-sub-tree 3-tree)
+
+(define valid-234? (lambda (root f xs)
+		     (if (null? xs) #t
+			   (and (or (= (value-count xs) (- (leaf-count xs) 1)) (= (leaf-count xs) 0))
+				(all? (lambda (x) (f x root)) (filter (lambda (x) (not (null? x))) (get-values xs)))
+				(valid-234? root f (return 0 (get-leaves xs))) 
+				(valid-234? root f (return 1 (get-leaves xs))) 
+				(valid-234? root f (return 2 (get-leaves xs))) 
+				(valid-234? root f (return 3 (get-leaves xs)))
+				) 
+			 ); end node vs. leaf count & function check for all leaves			   
+			   );end = for leaf-count
+			 )
+
+
+(valid-234? 4 > (return 0 (get-leaves test-tree))) 
+
+
