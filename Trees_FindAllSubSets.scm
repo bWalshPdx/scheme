@@ -451,7 +451,6 @@
         )
   )
 
-;TODO: Create a bad depth tree:
 
 (define bad-depth-tree
   (234-tree 2 
@@ -525,7 +524,6 @@
 (check-234-tree bad-2-tree)
 (check-234-tree bad-3-tree)
 
-;//TODO the max length is one ssless than it should:
 (define get-tree-length (lambda (f xs)
 			  (if (all? (lambda (x) (= 0 (length x))) (get-leaves xs))
 			      (if (all? (lambda (x) (null? x)) (get-values xs)) 0 1)
@@ -596,3 +594,121 @@
 (check-234-sub-tree 3-tree)
 
 (check-234-sub-tree bad-depth-tree)
+
+
+
+
+;*********************************************
+;Insert a Key into the 234 Tree
+;*********************************************
+
+;Explination of insertion 2-3-4 Tree:
+;http://www.youtube.com/watch?v=47u7RU0XNR0
+;http://www.cs.princeton.edu/courses/archive/spr07/cos226/lectures/09BalancedTrees.pdf
+
+;Split up child nodes
+;Add middle node to current values
+
+
+(define (is4Node xs) (= 3 (value-count (get-values xs))))
+
+(define (update-values  new-values 234-tree) (append new-values (get-leaves 234-tree)))
+
+(define (update-leaves new-leaves tree) (append (get-values tree) new-leaves))
+
+(define get-first-index (lambda (f xs) (letrec ((get-the-index (lambda (f xs i) (if (null? xs) xs (if (f (car xs)) i (get-the-index f (cdr xs) (+ 1 i)))))))(get-the-index f xs 0))))
+
+
+(define replace-child-node (lambda (tree new-val ind)
+  (letrec ((replace-value (lambda (xs new-value index i)
+			    (if (null? xs) xs
+				(if (= i index) (cons new-value (replace-value (cdr xs) new-value index (+ i 1)))
+				    (cons (car xs) (replace-value (cdr xs) new-value index (+ i 1)))
+				    )))))
+    (replace-value tree new-val (+ 3 ind) 0)
+    )))
+
+
+
+
+
+
+
+
+
+
+
+
+;TODO: Start to smoke test this function
+;(define (order-children new-children tree) (
+;				       (if (null? new-children) tree
+;					   (letrec (
+;						    (child-to-order (car new-children))
+;						    )
+;					     (case (value-count tree)
+;					       ((1) (if (< (return 0 (get-values child-to-order)) (return 0 (get-values xs)));End of 1st
+;							(order-children (cdr new-children) (replace-child-node tree child-to-order 0))
+;							(if (> (return 0 (get-values (car new-children))) (return 0 (get-values xs)))
+;							    (order-children (cdr new-children) (replace-child-node tree child-to-order 1));End of 2nd
+;							    (error "error in order children 2-node"))))
+;
+;					       ((2) (if (< (return 0 (get-values child-to-order)) (return 0 (get-values xs)))
+;							(order-children (cdr new-children) (replace-child-node tree child-to-order 0));End of 1st
+;							(if (and (> (return 0 (get-values child-to-order)) (return 0 (get-values xs)))
+;								 (< (return 0 (get-values child-to-order)) (return 1 (get-values xs))));End of 2nd
+;							    (order-children (cdr new-children) (replace-child-node tree child-to-order 1))
+;							    (if (and (> (return 0 (get-values child-to-order)) (return 1 (get-values xs)))
+;								     (< (return 0 (get-values child-to-order)) (return 2 (get-values xs))))
+;								(order-children (cdr new-children) (replace-child-node tree child-to-order 2));End of 3rd
+;								(error "error in order children 2-node"))))))
+;
+;					       ((3) (if (< (return 0 (get-values child-to-order)) (return 0 (get-values xs)))
+;							(order-children (cdr new-children) (replace-child-node tree child-to-order 0));End of 1st
+;							(if (and (> (return 0 (get-values child-to-order)) (return 0 (get-values xs)))
+;								 (< (return 0 (get-values child-to-order)) (return 1 (get-values xs))));End of 2nd
+;							    (order-children (cdr new-children) (replace-child-node tree child-to-order 1))
+;							    (if (and (> (return 0 (get-values child-to-order)) (return 1 (get-values xs)))
+;								     (< (return 0 (get-values child-to-order)) (return 2 (get-values xs))))
+;								(order-children (cdr new-children) (replace-child-node tree child-to-order 2));End of 3rd
+;								(if (> (return 0 (get-values child-to-order)) (return 2 (get-values xs)))
+;								    (order-children (cdr new-children) (replace-child-node tree child-to-order 3));End of 4th
+;								    (error "error in order children 2-node"))))))
+;					       ))))
+
+
+
+(define (divide-4Node 4Node) (
+			      (let (
+				    (new-subtree (update-values (merge '(i) (get-values xs) <) xs))
+				    (new-left-child (234-tree (return 0 (get-values 4Node)) value value (return 0 (get-leaves 4Node)) (return 1 (get-leaves 4Node)) leaf leaf))
+				    (new-right-child (234-tree (return 2 (get-values 4Node)) value value (return 2 (get-leaves 4Node)) (return 3 (get-leaves 4Node)) leaf leaf))
+				    )
+				;Case Version can be refactored:
+				(case (value-count xs) 
+				  ((1) (replace-child-node (replace-child-node new-subtree new-left-child 0) new-right-child 1))
+				    
+				  ((2) (replace-child-node (replace-child-node new-subtree new-left-child 1) new-right-child 2))
+				    
+				  ((3) (replace-child-node (replace-child-node new-subtree new-left-child 2) new-right-child 3))
+				  )
+			       (else (error "Error in divide-4Node"))
+			       )))
+				
+
+
+(define add-value (lambda (i xs) (;Check if this is the node you want to update:
+				  (if (and (all? (lambda (x) (= (length x) 0)) xs)
+					   (null? (get-first-index (lambda (x) (= i x)) xs)) 
+					   (not (is4Node xs)))
+				      (update-values (merge '(i) (get-values xs) <) xs) ;Recurse on this to sew it up?
+
+
+				      ;Check if the next node you want to recurse to is a 4-node and split it up before you do:
+				      (if (not (null? (get-first-index is4Node (get-leaves xs))))
+					  (sort-list (cons i (get-values xs)) <)
+
+
+
+								  
+
+									      
