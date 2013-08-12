@@ -51,11 +51,6 @@
 
 (define all? (lambda (f xs) (= (length xs) (length (filter f  xs)))))
 
-
-(define wait (lambda (current-seconds target-seconds)
-	       (if (< current-seconds (* 1000 target-seconds))
-		   (wait (+ current-seconds  1) target-seconds))))
-
 (define square (lambda (x) (* x x)))
 
 (define even? (lambda (x) (= 0 (modulo x 2))))
@@ -68,18 +63,19 @@
 
 (define assert-false (lambda (f x) (if (not (f x)) #t (error "assert-false failed")))) 
 
-(define count (lambda (f xs)
-		(if (null? xs) 0
-		    (if (f (car xs))
-			(+ 1 (count f (cdr xs)))
-			(+ 0 (count f (cdr xs)))))))
+(define count (lambda (xs) (letrec ((int-count (lambda (xs i) (if (null? xs) i(int-count (cdr xs) (+ 1 i)))))) (int-count xs 0))))
 
+(define return (lambda (n xs) (if (null? xs) (error "Out of Bounds of List") (if (= n 0) (car xs) (return (- n 1) (cdr xs))))))
 
-(define return (lambda (n xs) 
-		 (if (null? xs) (error "Out of Bounds of List")
-		 (if (= n 0) (car xs)
-		     (return (- n 1) (cdr xs))))))
-
+(define replace (lambda (new-element old-list index)
+		  (letrec (
+			   (int-replace (lambda (new-element old-list index current)
+					  (if (null? old-list) (error "replace: out of bounds")
+					      (if (= current index) (cons new-element (cdr old-list))
+						  (cons (car old-list) (int-replace new-element (cdr old-list) index (+ 1 current)))
+						  ))))
+			   )
+		    (int-replace new-element old-list index 0))))
 
 ;####################################################################
 ; Find all possible sub-sets in a list of integers:
@@ -507,8 +503,6 @@
 (define value-count  (lambda (xs)  (count (lambda (x) (not (null? x))) (get-values xs))))
 (define leaf-count  (lambda (xs)  (count (lambda (x) (not (null? x))) (get-leaves xs))))
 
-
-
 (define check-234-tree (lambda (xs)
 			 (if (null? xs) #t
 			     (if (check-234-sub-tree xs)
@@ -517,7 +511,6 @@
 				      (check-234-sub-tree (return 2 (get-leaves xs))) 
 				      (check-234-sub-tree (return 3 (get-leaves xs))))
 				 #f))))
-
 
 (check-234-tree bad-0-tree)
 (check-234-tree bad-1-tree)
@@ -602,113 +595,117 @@
 ;Insert a Key into the 234 Tree
 ;*********************************************
 
-;Explination of insertion 2-3-4 Tree:
-;http://www.youtube.com/watch?v=47u7RU0XNR0
-;http://www.cs.princeton.edu/courses/archive/spr07/cos226/lectures/09BalancedTrees.pdf
+;Data Structures:
+(define X '())
+(define Y '())
+(define Z '())
 
-;Split up child nodes
-;Add middle node to current values
-
-
-(define (is4Node xs) (= 3 (value-count (get-values xs))))
-
-(define (update-values  new-values 234-tree) (append new-values (get-leaves 234-tree)))
-
-(define (update-leaves new-leaves tree) (append (get-values tree) new-leaves))
-
-(define get-first-index (lambda (f xs) (letrec ((get-the-index (lambda (f xs i) (if (null? xs) xs (if (f (car xs)) i (get-the-index f (cdr xs) (+ 1 i)))))))(get-the-index f xs 0))))
+(define this-Tree '())
 
 
-(define replace-child-node (lambda (tree new-val ind)
-  (letrec ((replace-value (lambda (xs new-value index i)
-			    (if (null? xs) xs
-				(if (= i index) (cons new-value (replace-value (cdr xs) new-value index (+ i 1)))
-				    (cons (car xs) (replace-value (cdr xs) new-value index (+ i 1)))
-				    )))))
-    (replace-value tree new-val (+ 3 ind) 0)
-    )))
+(define leaf '())
+(define leaf? null?)
+(define (tree value left right) (list left right value))
+
+
+;TODO: This is bombing, and its probably something obvious
+(define (2Node this-Tree X this-Tree) (this-Tree X this-Tree))
 
 
 
+(define (3Node Tree X Tree Y Tree) (lambda Tree X Tree Y Tree))
+(define (4Node Tree X Tree Y Tree Z Tree) (lambda Tree X Tree Y Tree Z Tree))
+
+
+
+(error "getChild: (<4Node> out of bounds")
+				  
+;Navigation
+(define getChild  (lambda (value 234Tree) 
+		    (case (count 234Tree)
+		      ((0) (error "this is empty, no children"))
+		      
+		      ((3) (if (< value (return 1 xs)) (return 0)(return 2)))
+		      
+		      ((5) (if (< value (return 1 xs)) (return 0)
+			       (and (> value (return 1 xs)) (< value (return 3 xs))) (return 2)
+			       (if (> value (return 3 xs)) (return 4)
+				   (error "getChild: <3Node> out of bounds"))))
+		      
+		      ((7) (if (< value (return 1 xs)) (return 0)
+			       (and (> value (return 1 xs)) (< value (return 3 xs))) (return 2)
+			       (if (and (> value (return 3 xs)) (< value (return 5 xs))) (return 4)
+				   (if (< value (return 5 xs)) (return 6))
+				   )))
+		      )
+		    ))
+
+;TODO: Verify the addValue:
+(define addValue (lambda (value 234Tree)
+				     (case (count 234Tree)
+				       ((0) (2Node Tree value Tree))
+				       ((3) (3Node (return 0 234Tree) (return 1 234Tree) Tree value (return 2 234Tree)))
+				       ((5) (4Node (return 0 234Tree) (return 1 234Tree) (return 2 234Tree) Tree (return 4 234Tree)))
+				       )))
+
+
+(define split4Node (lambda (234Tree) (2Node (2Node (return 0 234Tree) (return 1 234Tree) (return 2 234Tree))  (return 3 234Tree) (2Node (return 4 234Tree) (return 5 234Tree) (return 6 234Tree)))))
+
+
+(define noChildren? (lambda (234Tree)
+		      (case (count 234Tree)
+			((0) #t)
+			
+			((3) (and (null? (return 0 234Tree)) (null? (return 2 234Tree)))
+			 ((5) (and (null? (return 0 234Tree)) (null? (return 2 234Tree)) (null? (return 4 234Tree))))
+			 ((7) (and (null? (return 0 234Tree)) (null? (return 2 234Tree)) (null? (return 4 234Tree)) (null? (return 6 234Tree))))
+			 ))))
+
+
+(define 4Node? (lambda (234Tree) (= (count 234Tree) 7)))
+
+
+(define getChildIndex  (lambda (value 234Tree) 
+		    (case (count 234Tree)
+		      ((0) (error "this is empty, no children"))
+		      
+		      ((3) (if (< value (return 1 xs)) 0 2))
+		      
+		      ((5) (if (< value (return 1 xs)) 0
+			       (and (> value (return 1 xs)) (< value (return 3 xs))) 2
+			       (if (> value (return 3 xs)) 4
+				   (error "getChild: <3Node> out of bounds"))))
+		      
+		      ((7) (if (< value (return 1 xs)) 0
+			       (and (> value (return 1 xs)) (< value (return 3 xs))) 2
+			       (if (and (> value (return 3 xs)) (< value (return 5 xs))) 4
+				   (if (< value (return 5 xs)) 6
+				       (error "getChild: (<4Node> out of bounds")))))
+		    )))
+
+
+(define addValue-234Tree  (lambda (value 234Tree)
+			    (if (noChildren? 234Tree) 
+				(addValue value 234Tree)
+				(if (4Node? 234Tree)
+				    (addValue-234Tree value (split4Node 234Tree))
+				    (replace (addValue-234Tree value (getChild 234Tree)) 234-Tree (getChildIndex 234Tree))
+				))))
+	 
+
+
+
+(addValue-234Tree 2 '())
 
 
 
 
+;==============
+;Tests for 234 Tree Value Addition:
+;==============
 
+(define assert-true (lambda (f x)
 
+(define assert-false (lambda (f x)
 
-
-
-;TODO: Start to smoke test this function
-;(define (order-children new-children tree) (
-;				       (if (null? new-children) tree
-;					   (letrec (
-;						    (child-to-order (car new-children))
-;						    )
-;					     (case (value-count tree)
-;					       ((1) (if (< (return 0 (get-values child-to-order)) (return 0 (get-values xs)));End of 1st
-;							(order-children (cdr new-children) (replace-child-node tree child-to-order 0))
-;							(if (> (return 0 (get-values (car new-children))) (return 0 (get-values xs)))
-;							    (order-children (cdr new-children) (replace-child-node tree child-to-order 1));End of 2nd
-;							    (error "error in order children 2-node"))))
-;
-;					       ((2) (if (< (return 0 (get-values child-to-order)) (return 0 (get-values xs)))
-;							(order-children (cdr new-children) (replace-child-node tree child-to-order 0));End of 1st
-;							(if (and (> (return 0 (get-values child-to-order)) (return 0 (get-values xs)))
-;								 (< (return 0 (get-values child-to-order)) (return 1 (get-values xs))));End of 2nd
-;							    (order-children (cdr new-children) (replace-child-node tree child-to-order 1))
-;							    (if (and (> (return 0 (get-values child-to-order)) (return 1 (get-values xs)))
-;								     (< (return 0 (get-values child-to-order)) (return 2 (get-values xs))))
-;								(order-children (cdr new-children) (replace-child-node tree child-to-order 2));End of 3rd
-;								(error "error in order children 2-node"))))))
-;
-;					       ((3) (if (< (return 0 (get-values child-to-order)) (return 0 (get-values xs)))
-;							(order-children (cdr new-children) (replace-child-node tree child-to-order 0));End of 1st
-;							(if (and (> (return 0 (get-values child-to-order)) (return 0 (get-values xs)))
-;								 (< (return 0 (get-values child-to-order)) (return 1 (get-values xs))));End of 2nd
-;							    (order-children (cdr new-children) (replace-child-node tree child-to-order 1))
-;							    (if (and (> (return 0 (get-values child-to-order)) (return 1 (get-values xs)))
-;								     (< (return 0 (get-values child-to-order)) (return 2 (get-values xs))))
-;								(order-children (cdr new-children) (replace-child-node tree child-to-order 2));End of 3rd
-;								(if (> (return 0 (get-values child-to-order)) (return 2 (get-values xs)))
-;								    (order-children (cdr new-children) (replace-child-node tree child-to-order 3));End of 4th
-;								    (error "error in order children 2-node"))))))
-;					       ))))
-
-
-
-(define (divide-4Node 4Node) (
-			      (let (
-				    (new-subtree (update-values (merge '(i) (get-values xs) <) xs))
-				    (new-left-child (234-tree (return 0 (get-values 4Node)) value value (return 0 (get-leaves 4Node)) (return 1 (get-leaves 4Node)) leaf leaf))
-				    (new-right-child (234-tree (return 2 (get-values 4Node)) value value (return 2 (get-leaves 4Node)) (return 3 (get-leaves 4Node)) leaf leaf))
-				    )
-				;Case Version can be refactored:
-				(case (value-count xs) 
-				  ((1) (replace-child-node (replace-child-node new-subtree new-left-child 0) new-right-child 1))
-				    
-				  ((2) (replace-child-node (replace-child-node new-subtree new-left-child 1) new-right-child 2))
-				    
-				  ((3) (replace-child-node (replace-child-node new-subtree new-left-child 2) new-right-child 3))
-				  )
-			       (else (error "Error in divide-4Node"))
-			       )))
-				
-
-
-(define add-value (lambda (i xs) (;Check if this is the node you want to update:
-				  (if (and (all? (lambda (x) (= (length x) 0)) xs)
-					   (null? (get-first-index (lambda (x) (= i x)) xs)) 
-					   (not (is4Node xs)))
-				      (update-values (merge '(i) (get-values xs) <) xs) ;Recurse on this to sew it up?
-
-
-				      ;Check if the next node you want to recurse to is a 4-node and split it up before you do:
-				      (if (not (null? (get-first-index is4Node (get-leaves xs))))
-					  (sort-list (cons i (get-values xs)) <)
-
-
-
-								  
-
-									      
+(assert-true 
