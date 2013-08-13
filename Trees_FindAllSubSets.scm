@@ -600,7 +600,13 @@
 (define Y '())
 (define Z '())
 
-(define this-Tree '())
+(define Tree1 '())
+(define Tree2 '())
+(define Tree3 '())
+(define Tree4 '())
+(define Tree5 '())
+(define Tree6 '())
+
 
 
 (define leaf '())
@@ -608,13 +614,9 @@
 (define (tree value left right) (list left right value))
 
 
-;TODO: This is bombing, and its probably something obvious
-(define (2Node this-Tree X this-Tree) (this-Tree X this-Tree))
-
-
-
-(define (3Node Tree X Tree Y Tree) (lambda Tree X Tree Y Tree))
-(define (4Node Tree X Tree Y Tree Z Tree) (lambda Tree X Tree Y Tree Z Tree))
+(define (2Node Tree1 X Tree2) (list Tree1 X Tree2))
+(define (3Node Tree1 X Tree2 Y Tree3) (list Tree1 X Tree2 Y Tree3))
+(define (4Node Tree1 X Tree2 Y Tree3 Z Tree4) (list Tree1 X Tree2 Y Tree3 Z Tree4))
 
 
 
@@ -625,17 +627,17 @@
 		    (case (count 234Tree)
 		      ((0) (error "this is empty, no children"))
 		      
-		      ((3) (if (< value (return 1 xs)) (return 0)(return 2)))
+		      ((3) (if (< value (return 1 234Tree)) (return 0)(return 2 234Tree)))
 		      
-		      ((5) (if (< value (return 1 xs)) (return 0)
-			       (and (> value (return 1 xs)) (< value (return 3 xs))) (return 2)
-			       (if (> value (return 3 xs)) (return 4)
+		      ((5) (if (< value (return 1 234Tree)) (return 0 234Tree)
+			       (and (> value (return 1 234Tree)) (< value (return 3 234Tree))) (return 2 234Tree)
+			       (if (> value (return 3 234Tree)) (return 4 234Tree)
 				   (error "getChild: <3Node> out of bounds"))))
 		      
-		      ((7) (if (< value (return 1 xs)) (return 0)
-			       (and (> value (return 1 xs)) (< value (return 3 xs))) (return 2)
-			       (if (and (> value (return 3 xs)) (< value (return 5 xs))) (return 4)
-				   (if (< value (return 5 xs)) (return 6))
+		      ((7) (if (< value (return 1 234Tree)) (return 0 234Tree)
+			       (and (> value (return 1 234Tree)) (< value (return 3 234Tree))) (return 2 234Tree)
+			       (if (and (> value (return 3 234Tree)) (< value (return 5 234Tree))) (return 4 234Tree)
+				   (if (< value (return 5 234Tree)) (return 6 234Tree))
 				   )))
 		      )
 		    ))
@@ -645,7 +647,7 @@
 				     (case (count 234Tree)
 				       ((0) (2Node Tree value Tree))
 				       ((3) (3Node (return 0 234Tree) (return 1 234Tree) Tree value (return 2 234Tree)))
-				       ((5) (4Node (return 0 234Tree) (return 1 234Tree) (return 2 234Tree) Tree (return 4 234Tree)))
+				       ((5) (4Node (return 0 234Tree) (return 1 234Tree) (return 2 234Tree) (return 3 234Tree) Tree value (return 4 234Tree)))
 				       )))
 
 
@@ -669,43 +671,34 @@
 		    (case (count 234Tree)
 		      ((0) (error "this is empty, no children"))
 		      
-		      ((3) (if (< value (return 1 xs)) 0 2))
+		      ((3) (if (< value (return 1 234Tree)) 0 2))
 		      
-		      ((5) (if (< value (return 1 xs)) 0
-			       (and (> value (return 1 xs)) (< value (return 3 xs))) 2
-			       (if (> value (return 3 xs)) 4
+		      ((5) (if (< value (return 1 234Tree)) 0
+			       (and (> value (return 1 234Tree)) (< value (return 3 234Tree))) 2
+			       (if (> value (return 3 234Tree)) 4
 				   (error "getChild: <3Node> out of bounds"))))
 		      
-		      ((7) (if (< value (return 1 xs)) 0
-			       (and (> value (return 1 xs)) (< value (return 3 xs))) 2
-			       (if (and (> value (return 3 xs)) (< value (return 5 xs))) 4
-				   (if (< value (return 5 xs)) 6
+		      ((7) (if (< value (return 1 234Tree)) 0
+			       (and (> value (return 1 234Tree)) (< value (return 3 234Tree))) 2
+			       (if (and (> value (return 3 234Tree)) (< value (return 5 234Tree))) 4
+				   (if (< value (return 5 234Tree)) 6
 				       (error "getChild: (<4Node> out of bounds")))))
 		    )))
 
 
 (define addValue-234Tree  (lambda (value 234Tree)
-			    (if (noChildren? 234Tree) 
-				(addValue value 234Tree)
-				(if (4Node? 234Tree)
-				    (addValue-234Tree value (split4Node 234Tree))
-				    (replace (addValue-234Tree value (getChild 234Tree)) 234-Tree (getChildIndex 234Tree))
-				))))
+			    (if (4Node? 234Tree)
+				(addValue-234Tree value (split4Node 234Tree))
+				(if (noChildren? 234Tree) 
+				    (addValue value 234Tree)
+				    (replace (addValue-234Tree value (getChild value 234Tree)) 234Tree (getChildIndex value 234Tree))
+				    ))))
+	 
+
+;============================================================================================
+;============================================================================================
+;============================================================================================
 	 
 
 
 
-(addValue-234Tree 2 '())
-
-
-
-
-;==============
-;Tests for 234 Tree Value Addition:
-;==============
-
-(define assert-true (lambda (f x)
-
-(define assert-false (lambda (f x)
-
-(assert-true 
